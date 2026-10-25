@@ -14,16 +14,18 @@
 /* Layout: plain white page, left-aligned 1080px measure; each section is a row (small orange label | content) separated by orange rules, stacking to one column on phones */
 :root{
   --bg:#FFFFFF;
-  --fg:#1C1917;
-  --muted:#6B635C;
-  --line:#F6D3BC;
-  --rule:#EA580C;
-  --accent:#EA580C;
-  --accent-ink:#C2410C;
-  --wash:#FFF6F0;
-  --shade:#F4F0EC;
-  --code-bg:#FBF8F6;
-  --comment:#8A7F76;
+  --fg:#0F172A;
+  --muted:#5B6475;
+  --line:#D6DFEE;
+  --rule:#1E3A8A;
+  --accent:#1E40AF;
+  --accent-ink:#1E3A8A;
+  --accent-deep:#172554;
+  --wash:#EEF3FB;
+  --shade:#EEF1F6;
+  --code-bg:#F6F8FC;
+  --comment:#6B7689;
+  --select:#CFDCF3;
   --font-sans:"Google Sans Flex","Google Sans","Roboto",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
   --font-code:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   color-scheme:light;
@@ -36,7 +38,7 @@ body{
   font-family:var(--font-sans); font-size:17px; line-height:1.6;
   -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
 }
-::selection{background:#FCD9C2; color:var(--fg)}
+::selection{background:var(--select); color:var(--fg)}
 h1,h2,h3{font-family:var(--font-sans); text-wrap:balance; margin:0}
 p{margin:0}
 a{color:var(--accent-ink); text-decoration-thickness:1px; text-underline-offset:3px}
@@ -60,6 +62,11 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
 .topbar nav{display:flex; gap:24px; flex-wrap:wrap}
 .topbar nav a{color:var(--muted); text-decoration:none; font-size:15px; font-weight:500}
 .topbar nav a:hover{color:var(--accent-ink)}
+.topbar nav{align-items:center}
+.topbar nav a.nav-cta{color:var(--accent-ink); border:1px solid var(--accent); border-radius:999px; padding:5px 13px}
+.topbar nav a.nav-cta:hover{background:var(--wash)}
+.links{display:flex; gap:10px 24px; flex-wrap:wrap; font-weight:500}
+.courses{font-size:14.5px; color:var(--muted); max-width:62ch}
 
 /* Hero */
 .hero{display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:48px; align-items:center; padding-block:48px 72px}
@@ -84,7 +91,7 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
 }
 .btn:hover{border-color:var(--accent); color:var(--accent-ink); text-decoration:none}
 .btn.primary{background:var(--accent-ink); border-color:var(--accent-ink); color:#FFFFFF}
-.btn.primary:hover{background:#9A3412; border-color:#9A3412; color:#FFFFFF}
+.btn.primary:hover{background:var(--accent-deep); border-color:var(--accent-deep); color:#FFFFFF}
 .btn.small{padding:8px 14px; font-size:14px}
 
 /* Section rows */
@@ -216,17 +223,17 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
 
 /* Lightbox */
 .lb{
-  position:fixed; inset:0; z-index:50; background:rgba(24,20,17,.94);
+  position:fixed; inset:0; z-index:50; background:rgba(10,15,30,.94);
   display:grid; grid-template-columns:56px minmax(0,1fr) 56px; align-items:center;
   padding:calc(env(safe-area-inset-top, 0px) + 56px) max(8px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 20px) max(8px, env(safe-area-inset-left, 0px));
 }
 .lb figure{margin:0; display:flex; flex-direction:column; align-items:center; gap:12px; min-width:0; height:100%; justify-content:center}
 .lb-media{display:flex; align-items:center; justify-content:center; min-height:0; flex:1 1 auto; width:100%}
 .lb-media img, .lb-media video{max-width:100%; max-height:calc(100vh - 170px); border-radius:10px; display:block}
-.lb figcaption{color:#F3EDE8; font-size:15px; text-align:center; max-width:60ch; line-height:1.45}
-.lb figcaption .count{display:block; color:#B9AEA5; font-size:13px; margin-top:4px}
+.lb figcaption{color:#EAF0F8; font-size:15px; text-align:center; max-width:60ch; line-height:1.45}
+.lb figcaption .count{display:block; color:#A3AFC2; font-size:13px; margin-top:4px}
 .lb button{background:transparent; border:1px solid rgba(255,255,255,.25); color:#FFFFFF; width:44px; height:44px; border-radius:50%; cursor:pointer; font:400 24px/1 var(--font-sans); display:grid; place-items:center; justify-self:center}
-.lb button:hover{border-color:var(--accent); color:#FDBA8C}
+.lb button:hover{border-color:#A9C1F5; color:#A9C1F5}
 .lb .lb-close{position:absolute; top:calc(env(safe-area-inset-top, 0px) + 12px); right:max(12px, env(safe-area-inset-right, 0px))}
 
 @media (max-width: 900px){
@@ -244,6 +251,10 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
   .gallery{--row:130px; gap:6px}
 }
 @media (max-width: 520px){
+  .topbar nav{gap:16px}
+  .topbar nav a{font-size:14.5px}
+  .topbar nav .nav-opt{display:none}
+  .topbar nav a.nav-cta{padding:4px 11px}
   .entry{grid-template-columns:minmax(0,1fr)}
   .entry .when{padding-top:0}
   .entry.school{grid-template-columns:76px minmax(0,1fr); column-gap:16px; align-items:start}
@@ -262,16 +273,17 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
 <meta property="og:title" content="Nftalem Asefaw | Electrical Engineering Portfolio">
 <meta property="og:description" content="Embedded systems, firmware, and hardware projects by Nftalem (Naf) Asefaw, University of Maryland.">
 <meta property="og:type" content="website">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect x=%224%22 y=%224%22 width=%2256%22 height=%2256%22 rx=%2214%22 fill=%22white%22 stroke=%22%23EA580C%22 stroke-width=%224%22/%3E%3Ctext x=%2232%22 y=%2241%22 font-family=%22Arial,sans-serif%22 font-size=%2224%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22%231C1917%22%3ENA%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect x=%224%22 y=%224%22 width=%2256%22 height=%2256%22 rx=%2214%22 fill=%22white%22 stroke=%22%231E3A8A%22 stroke-width=%224%22/%3E%3Ctext x=%2232%22 y=%2241%22 font-family=%22Arial,sans-serif%22 font-size=%2224%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22%230F172A%22%3ENA%3C/text%3E%3C/svg%3E">
 </head>
 <body>
 <header class="topbar wrap">
   <a class="mark" href="#top" aria-label="Back to top">NA</a>
   <nav aria-label="Sections">
     <a href="#work">Work</a>
-    <a href="#about">About</a>
+    <a class="nav-opt" href="#about">About</a>
     <a href="#experience">Experience</a>
     <a href="#contact">Contact</a>
+    <a class="nav-cta" href="Nftalem_Asefaw_Resume.pdf" target="_blank" rel="noopener">Resume</a>
   </nav>
 </header>
 
@@ -289,6 +301,8 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
       </dl>
       <div class="actions">
         <a class="btn primary" href="#work">See my projects</a>
+        <a class="btn" href="Nftalem_Asefaw_Resume.pdf" target="_blank" rel="noopener">Resume (PDF)</a>
+        <a class="btn" href="https://www.linkedin.com/in/nftalem-asefaw-305931216/" target="_blank" rel="noopener">LinkedIn ↗</a>
         <button class="btn" type="button" id="copy-email-hero" data-copy="asefawnftalem@gmail.com">Copy email</button>
       </div>
     </div>
@@ -309,7 +323,13 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
             <span class="status">Deployed</span>
           </div>
           <p class="tagline">A plug-in kitchen display system that runs on a Raspberry Pi. No cloud, no subscription, no IT setup.</p>
-          <p>The box runs its own private Wi-Fi network and serves a React app to any tablet with a browser. Orders move between screens instantly over Socket.IO, and everything lives in a local SQLite database, so service keeps going even when the internet doesn't. It's deployed on tablets at Sky Zone, and I've demoed it live in a working café.</p>
+          <p class="meta">Lead engineer · Sky Zone Gaithersburg · March 2026 to present</p>
+          <dl class="results">
+            <div><dt>3x</dt><dd>Orders completed in the same time</dd></div>
+            <div><dt>About 9 min</dt><dd>Wait time, down from 10 to 20 min</dd></div>
+            <div><dt>All staff</dt><dd>Adopted by the whole kitchen</dd></div>
+          </dl>
+          <p>The box runs its own private Wi-Fi network and serves a React app to any tablet with a browser. Orders move between screens instantly over Socket.IO, and everything lives in a local SQLite database, so service keeps going even when the internet doesn't. It replaced verbal order calls in Sky Zone's busy café kitchen, where the staff use it on tablets.</p>
 
           <figure class="flow-fig">
             <div class="flow" role="img" aria-label="Diagram: a Raspberry Pi 4 running Express, Socket.IO and SQLite connects through a travel router's private Wi-Fi to three tablet screens: Front Order, Kitchen Display and Party Orders.">
@@ -558,13 +578,13 @@ void moveToPositionIndex(int index) {
             <h3>SeaPerch ROV</h3>
             <span class="status">Competed</span>
           </div>
-          <p class="meta">Team Archimedes · 2024 season</p>
+          <p class="meta">Robotics team lead · Team Archimedes · Spring 2024</p>
           <dl class="results">
             <div><dt>1st place</dt><dd>Southern Regional</dd></div>
             <div><dt>32nd of 75</dt><dd>High school overall, International Challenge</dd></div>
             <div><dt>29th</dt><dd>Obstacle course, International Challenge</dd></div>
           </dl>
-          <p>An underwater remotely operated vehicle we built and piloted for the SeaPerch challenge. After winning the Southern Regional, our team qualified for the 2024 International SeaPerch Challenge at the University of Maryland, where we placed 32nd of 75 teams in the high school class against teams from across the U.S. and abroad.</p>
+          <p>A tethered underwater ROV we built and piloted for the SeaPerch challenge. As team lead, I directed the build and tuned its buoyancy, stability, and thruster layout through repeated testing. After winning the Southern Regional, our team qualified for the 2024 International SeaPerch Challenge at the University of Maryland, where we placed 32nd of 75 teams in the high school class against teams from across the U.S. and abroad.</p>
           <div class="gallery" aria-label="SeaPerch ROV photos">
             <button class="shot" type="button" style="--ar:0.75" data-src="media/sp-rov.jpg" data-cap="Our ROV: a PVC frame with foam floats and motor mounts."><img src="media/sp-rov-t.jpg" alt="Close-up of a PVC-frame SeaPerch ROV with foam floats" loading="lazy" decoding="async"></button>
             <button class="shot" type="button" style="--ar:1.333" data-src="media/sp-underwater.jpg" data-cap="Underwater during a pool run."><img src="media/sp-underwater-t.jpg" alt="The ROV underwater near a course obstacle" loading="lazy" decoding="async"></button>
@@ -583,7 +603,8 @@ void moveToPositionIndex(int index) {
             <h3>RFID Clock-In System</h3>
             <span class="status hollow">Working prototype</span>
           </div>
-          <p>A badge-tap time clock for shift work. A Raspberry Pi reads RFID cards through an RC522 module, tracks clock-ins and clock-outs in Python, and shows the result on a 20x4 character LCD (LCD2004): who just clocked in, how long they worked, and what they earned for the shift. It all lives in a 3D printed enclosure with the screen on top and the reader below.</p>
+          <p class="meta">Co-leader · Fall 2025</p>
+          <p>A badge-tap time clock for shift work. A Raspberry Pi reads RFID badges through an RC522 module over SPI, and a 20x4 character LCD (LCD2004) shows who just clocked in, how long they worked, and what they earned for the shift. I programmed the Python side: badge authentication, UID parsing, GPIO control, timestamp logging, and pay calculation. It all lives in a 3D printed enclosure with the screen on top and the reader below.</p>
           <div class="gallery" aria-label="RFID Clock-In System photos and video">
             <button class="shot" type="button" style="--ar:0.562" data-type="video" data-src="media/rfid-demo.mp4" data-poster="media/rfid-demo-poster.jpg" data-cap="Demo: tap a card to clock in, tap again to clock out. The LCD shows time worked and pay earned.">
               <video src="media/rfid-demo.mp4" poster="media/rfid-demo-poster.jpg" muted loop playsinline autoplay preload="metadata" aria-label="Demo video of the RFID clock-in system"></video>
@@ -595,8 +616,24 @@ void moveToPositionIndex(int index) {
             <button class="shot" type="button" style="--ar:1.333" data-src="media/rfid-terminal.jpg" data-cap="Debugging tag reads in Python on the Pi."><img src="media/rfid-terminal-t.jpg" alt="Terminal output showing detected RFID tag numbers" loading="lazy" decoding="async"></button>
           </div>
           <ul class="tags" aria-label="Tools used">
-            <li>Raspberry Pi</li><li>Python</li><li>RC522 RFID</li><li>LCD2004 (20x4)</li><li>3D printing</li>
+            <li>Raspberry Pi</li><li>Python</li><li>RC522 RFID</li><li>SPI</li><li>LCD2004 (20x4)</li><li>3D printing</li>
           </ul>
+        </article>
+
+        <!-- Neural networks -->
+        <article class="proj">
+          <div class="proj-head">
+            <h3>Neural Networks and GANs</h3>
+            <span class="status">In progress</span>
+          </div>
+          <p class="meta">University of Maryland · Fall 2026</p>
+          <dl class="results">
+            <div><dt>97.3%</dt><dd>Accuracy on 10,000 test digits</dd></div>
+            <div><dt>26</dt><dd>Network configurations compared</dd></div>
+            <div><dt>20,000</dt><dd>Photos in the face GAN's training set</dd></div>
+          </dl>
+          <p>A handwritten digit recognizer built from scratch in Python and NumPy. I ran a parameter study across 26 network configurations and reached 97.3% accuracy on the 10,000-image test set. From there I moved to generative models, training GANs in PyTorch on a Colab GPU, including a face generator trained on 20,000 photos.</p>
+          <ul class="tags" aria-label="Tools used"><li>Python</li><li>NumPy</li><li>PyTorch</li><li>Google Colab</li></ul>
         </article>
 
         <!-- Puzzlr -->
@@ -632,14 +669,14 @@ void moveToPositionIndex(int index) {
       <div class="content">
         <ol class="entries">
           <li class="entry">
-            <div><h3>Team Lead</h3><span class="org">Sky Zone</span></div>
-            <span class="when">Current</span>
-            <p>I lead shifts, build the staff schedule, and built the KDS Box to handle the park's food and party orders.</p>
+            <div><h3>Team Lead</h3><span class="org">Sky Zone Trampoline Park, Gaithersburg</span></div>
+            <span class="when">July 2024 to present</span>
+            <p>I supervise daily operations across the park, coordinate staff and safety procedures during peak hours, onboard new employees, and build the staff schedule. I also built the KDS Box for the park's café. Earlier roles: café associate, party host, and front desk cashier.</p>
           </li>
           <li class="entry">
-            <div><h3>Tutor</h3><span class="org">Northstar Tutoring</span></div>
-            <span class="when">Current</span>
-            <p>I work with students one on one and break tough material into steps that actually make sense.</p>
+            <div><h3>Volunteer Tutor</h3><span class="org">Northstar Tutoring, Hyattsville</span></div>
+            <span class="when">Oct 2025 to present</span>
+            <p>I mentor two high school students in math and computer science, and helped raise their average GPA by 0.5 points.</p>
           </li>
         </ol>
       </div>
@@ -654,17 +691,18 @@ void moveToPositionIndex(int index) {
           <li class="entry school">
             <img class="school-logo" src="media/umd.png" alt="University of Maryland" width="444" height="255">
             <div><h3>B.S. Electrical Engineering</h3><span class="org">University of Maryland, College Park</span></div>
-            <span class="when">Since 2026</span>
+            <span class="when">Expected Dec 2028</span>
           </li>
           <li class="entry school">
             <img class="school-logo" src="media/mc.png" alt="Montgomery College" width="400" height="294">
             <div>
-              <h3>A.S. Electrical Engineering</h3><span class="org">Montgomery College, Rockville</span>
+              <h3>A.S. Engineering Science (Electrical Engineering)</h3><span class="org">Montgomery College, Rockville</span>
               <span class="honors">3.82 GPA · Dean's List · Phi Theta Kappa · 2nd place, 2025 SET Design Challenge</span>
             </div>
-            <span class="when">Completed 2026</span>
+            <span class="when">May 2026</span>
           </li>
         </ol>
+        <p class="courses">Relevant coursework: Electric Circuits, Digital Logic Design, Digital Circuits and Systems Lab, Discrete Signal Analysis</p>
       </div>
     </div>
   </section>
@@ -674,10 +712,12 @@ void moveToPositionIndex(int index) {
       <h2 class="label">Skills</h2>
       <div class="content">
         <dl class="skills">
-          <div><dt>Embedded &amp; hardware</dt><dd>Raspberry Pi, Arduino, RFID (RC522), stepper and DC motors, LCD displays, oscilloscope measurement</dd></div>
-          <div><dt>Software</dt><dd>JavaScript, React, Node.js and Express, Socket.IO, Python, C++, C# (Unity), SQLite</dd></div>
-          <div><dt>Systems &amp; tools</dt><dd>Linux, systemd, Git and GitHub, Vercel, Cloudflare, local networking (DHCP, mDNS)</dd></div>
-          <div><dt>Fabrication</dt><dd>CAD modeling, 3D printing, laser cutting</dd></div>
+          <div><dt>Embedded &amp; hardware</dt><dd>Raspberry Pi, Arduino, FPGA (Basys 3), sensor integration over SPI and I2C, RFID (RC522), stepper and DC motors, breadboarding</dd></div>
+          <div><dt>Lab equipment</dt><dd>Oscilloscope, logic analyzer, function generator, DC power supply, multimeter</dd></div>
+          <div><dt>Programming</dt><dd>C, C++ (Arduino), Verilog, Python (NumPy, PyTorch), MATLAB, JavaScript (Node.js, Express, React), C# (Unity)</dd></div>
+          <div><dt>EDA &amp; simulation</dt><dd>Vivado, PSpice (OrCAD Capture CIS), EDA Playground, Logic Aid, Circuit Maker</dd></div>
+          <div><dt>Systems &amp; tools</dt><dd>Linux, systemd, Git and GitHub, SQLite, Socket.IO, Vercel, Cloudflare, local networking (DHCP, mDNS)</dd></div>
+          <div><dt>CAD &amp; fabrication</dt><dd>CREO, Tinkercad, 3D printing, laser cutting</dd></div>
           <div><dt>Languages</dt><dd>English, Amharic, and Tigrinya (fluent) · Arabic (conversational)</dd></div>
         </dl>
       </div>
@@ -735,6 +775,10 @@ void moveToPositionIndex(int index) {
         <div class="email-line">
           <span class="email" id="email-text">asefawnftalem@gmail.com</span>
           <button class="btn small" type="button" id="copy-email" data-copy="asefawnftalem@gmail.com">Copy</button>
+        </div>
+        <div class="links">
+          <a href="https://www.linkedin.com/in/nftalem-asefaw-305931216/" target="_blank" rel="noopener">LinkedIn ↗</a>
+          <a href="Nftalem_Asefaw_Resume.pdf" target="_blank" rel="noopener">Resume (PDF) ↗</a>
         </div>
         <p class="muted">Based in the Maryland area.</p>
       </div>
