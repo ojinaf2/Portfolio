@@ -22,6 +22,8 @@
   --accent-ink:#C2410C;
   --wash:#FFF6F0;
   --shade:#F4F0EC;
+  --code-bg:#FBF8F6;
+  --comment:#8A7F76;
   --font-sans:"Google Sans Flex","Google Sans","Roboto",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
   --font-code:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   color-scheme:light;
@@ -141,6 +143,22 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
 .shot .badge::before{content:""; border-left:7px solid var(--accent); border-top:4.5px solid transparent; border-bottom:4.5px solid transparent}
 .hint{font-size:13px; color:var(--muted)}
 
+/* Code excerpts */
+.code{border:1px solid var(--line); border-radius:12px; background:var(--bg); max-width:100%; min-width:0}
+.code > summary{cursor:pointer; list-style:none; padding:12px 16px; font-weight:500; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.code > summary::-webkit-details-marker{display:none}
+.code > summary::before{content:""; width:7px; height:7px; border-right:1.5px solid var(--accent); border-bottom:1.5px solid var(--accent); transform:rotate(-45deg); transition:transform .2s; margin-right:2px}
+.code[open] > summary::before{transform:rotate(45deg)}
+.code > summary:hover{color:var(--accent-ink)}
+.code > summary .count{color:var(--muted); font-weight:400; font-size:14px}
+.code-body{display:flex; flex-direction:column; gap:20px; padding:4px 16px 18px; min-width:0}
+.snippet{margin:0; min-width:0}
+.snippet figcaption{font-size:14.5px; line-height:1.45; margin-bottom:8px; max-width:64ch}
+.snippet .file{display:block; font-family:var(--font-code); font-size:12.5px; color:var(--accent-ink); margin-bottom:2px}
+.snippet pre{margin:0; overflow-x:auto; background:var(--code-bg); border:1px solid var(--line); border-radius:10px; padding:14px 16px; font:12.5px/1.6 var(--font-code); color:var(--fg); tab-size:2}
+.snippet pre code{background:none; color:inherit; padding:0; border-radius:0; font:inherit}
+.snippet .c{color:var(--comment)}
+
 /* KDS flow figure */
 .flow-fig{margin:4px 0 0; padding:24px; background:var(--bg); border:1px solid var(--line); border-radius:14px; container-type:inline-size}
 .flow{display:flex; align-items:center}
@@ -251,8 +269,8 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
   <a class="mark" href="#top" aria-label="Back to top">NA</a>
   <nav aria-label="Sections">
     <a href="#work">Work</a>
-    <a href="#unfinished">Unfinished</a>
     <a href="#about">About</a>
+    <a href="#experience">Experience</a>
     <a href="#contact">Contact</a>
   </nav>
 </header>
@@ -265,7 +283,7 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
       <p class="aka">Goes by Naf</p>
       <p class="lede">I'm an electrical engineering student focused on embedded systems. I work across hardware and software: microcontroller firmware, motor control, RFID and sensor I/O, Linux services on Raspberry Pi, and real-time networked apps. I care about systems that hold up outside the lab, and I test them until they do.</p>
       <dl class="facts">
-        <div><dt>Looking for</dt><dd>Summer 2027 internships in embedded software, firmware, test, or DevOps</dd></div>
+        <div><dt>Looking for</dt><dd>Summer 2027 internships in embedded systems, firmware, and test engineering</dd></div>
         <div><dt>Studying</dt><dd>B.S. Electrical Engineering, University of Maryland, College Park</dd></div>
         <div><dt>Based in</dt><dd>Maryland, open to roles across MD, VA, and DC</dd></div>
       </dl>
@@ -324,10 +342,96 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
           <ul class="points">
             <li>Three screens: order entry with per-item notes, a kitchen display with color-coded urgency timers, and a party-order board with shorthand codes and automatic duplicate merging.</li>
             <li>A REST API handles orders, history, and party orders, and Socket.IO events like <code>orders:new</code> and <code>party:completed</code> keep every screen in sync.</li>
-            <li>Runs as a systemd service with auto-start and crash recovery, and I've physically tested it for recovery after a power loss.</li>
+            <li>Built to keep running: it's a systemd service with auto-start and crash recovery, SQLite uses write-ahead logging for crash resilience on the Pi's SD card, and on startup the server reads the highest saved order number so a reboot never reuses one. I've physically tested it for recovery after a power loss.</li>
             <li>Android tablets couldn't reliably resolve the kds.local hostname, so I added a travel router with a DHCP reservation to give the Pi a fixed address.</li>
             <li>Next up: moving the menu out of per-tablet storage and into SQLite behind an API, so any venue can set up its own menu without touching code.</li>
           </ul>
+<details class="code">
+<summary>View code excerpts <span class="count">3 excerpts, Node.js and React</span></summary>
+<div class="code-body">
+<figure class="snippet"><figcaption><span class="file">server/src/index.js</span>Startup: write-ahead logging for crash resilience, then order numbering resumes from the database before the server starts listening.</figcaption><pre><code><span class="c">// ---- SD-card crash resilience: Write-Ahead Logging ----</span>
+db.run(&quot;PRAGMA journal_mode = WAL;&quot;);
+
+<span class="c">// ...</span>
+
+function seedOrderCounterAndStart() {
+  db.get(
+    `SELECT MAX(order_number) AS maxOrderNumber FROM orders`,
+    [],
+    (err, row) =&gt; {
+      if (err) {
+        console.error(&quot;Failed to init order counter:&quot;, err.message);
+        nextOrderNumber = 1000;
+      } else if (row &amp;&amp; row.maxOrderNumber != null) {
+        nextOrderNumber = row.maxOrderNumber + 1;
+      } else {
+        nextOrderNumber = 1000;
+      }
+
+      console.log(&quot;Next order number starts at:&quot;, nextOrderNumber);
+
+      server.listen(PORT, () =&gt; {
+        console.log(`KDS running on http://localhost:${PORT}`);
+      });
+    },
+  );
+}
+seedOrderCounterAndStart();</code></pre></figure>
+<figure class="snippet"><figcaption><span class="file">server/src/index.js</span>Creating an order: validate, write the order and its items to SQLite, then push a live event to every connected screen.</figcaption><pre><code>app.post(&quot;/api/orders&quot;, (req, res) =&gt; {
+  const { items, order_type = &quot;DINE_IN&quot;, customer_label = null } = req.body;
+
+  if (!items || items.length === 0) {
+    return res.status(400).json({ error: &quot;Order must contain items&quot; });
+  }
+
+  const created_at = new Date().toISOString();
+
+  <span class="c">// Generate order number</span>
+  const order_number = nextOrderNumber++;
+
+  db.run(
+    `INSERT INTO orders (order_number, status, order_type, customer_label, created_at)
+     VALUES (?, &#x27;ACTIVE&#x27;, ?, ?, ?)`,
+    [order_number, order_type, customer_label, created_at],
+    function (err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      const order_id = this.lastID;
+
+      const stmt = db.prepare(
+        `INSERT INTO order_items (order_id, item_name, qty, note, sort_order)
+         VALUES (?, ?, ?, ?, ?)`,
+      );
+
+      items.forEach((item, index) =&gt; {
+        stmt.run(order_id, item.name, item.qty, item.note || &quot;&quot;, index);
+      });
+
+      stmt.finalize((finalizeErr) =&gt; {
+        if (finalizeErr)
+          return res.status(500).json({ error: finalizeErr.message });
+
+        io.emit(&quot;orders:new&quot;, { order_id, order_number });
+
+        res.json({ success: true, order_id, order_number });
+      });
+    },
+  );
+});</code></pre></figure>
+<figure class="snippet"><figcaption><span class="file">client/src/pages/Kitchen.jsx</span>Urgency timers: each ticket changes color as it ages past the kitchen&#x27;s target time, which staff set on the Settings tab.</figcaption><pre><code>function getUrgencyLevel(createdAt, acceptableMinutes) {
+  const created = new Date(createdAt).getTime();
+  const now = Date.now();
+  const elapsedMinutes = (now - created) / 60000;
+
+  if (elapsedMinutes &lt;= acceptableMinutes) return &quot;green&quot;;
+  if (elapsedMinutes &lt;= acceptableMinutes + 3) return &quot;yellow&quot;;
+  if (elapsedMinutes &lt;= acceptableMinutes + 7) return &quot;orange&quot;;
+  return &quot;red&quot;;
+}</code></pre></figure>
+</div>
+</details>
           <div class="gallery" aria-label="KDS Box photos and screenshots">
             <button class="shot" type="button" style="--ar:1.333" data-src="media/kds-ipad.jpg" data-cap="The Kitchen Display running on an iPad, showing the party orders board."><img src="media/kds-ipad-t.jpg" alt="iPad in a case showing the dark Kitchen Display interface with party orders" loading="lazy" decoding="async"></button>
             <button class="shot" type="button" style="--ar:1.333" data-src="media/kds-tablet-front.jpg" data-cap="The Front Order screen on a tablet, served straight from the Pi."><img src="media/kds-tablet-front-t.jpg" alt="Tablet with a keyboard case showing the Front Order screen" loading="lazy" decoding="async"></button>
@@ -357,11 +461,84 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
           </dl>
           <p>A kinetic sculpture that tells the story of the creative process. Seven laser-cut panels (The Spark, Curiosity, Shaping, Struggle, Breakthrough, Building, and Transformation) sit inside a 3D printed carousel, and an Arduino turns it one chapter at a time.</p>
           <ul class="points">
-            <li>I owned the electronics: an Elegoo Mega driving a 28BYJ-48 stepper motor through a ULN2003 driver, with Next and Reset buttons, status LEDs, and a wireless remote.</li>
+            <li>I owned the electronics: an Elegoo Mega driving a 28BYJ-48 stepper motor through a ULN2003 driver, with Next and Reset buttons, status LEDs, and an IR remote.</li>
             <li>The code moves the carousel in exact 90° steps across four chapter positions, debounces every press, stops it from over-rotating, and sends it home on reset.</li>
+            <li>To use a generic IR remote, I wrote a small scanner sketch that printed each button's code over serial, then mapped those codes to next, previous, jump to a scene, and reset.</li>
             <li>We designed the parts in CAD, printed them in PLA, and laser-cut the story panels at the MC Innovation Center.</li>
             <li>Our first plan had LCD screens and a branching storyline. We scaled it back to something we could build well, then fixed fit problems by resizing and reprinting parts.</li>
           </ul>
+          <details class="code">
+<summary>View code excerpts <span class="count">3 excerpts, Arduino C++</span></summary>
+<div class="code-body">
+<figure class="snippet"><figcaption><span class="file">Remote scanner sketch</span>A throwaway sketch to read each remote button&#x27;s code over serial, so I knew which values to map.</figcaption><pre><code>#include &lt;IRremote.h&gt;
+
+const int IR_RECV_PIN = 7;
+IRrecv irrecv(IR_RECV_PIN);
+decode_results results;
+
+void setup() {
+  Serial.begin(9600);
+  irrecv.enableIRIn(); <span class="c">// Start the receiver</span>
+}
+
+void loop() {
+  if (irrecv.decode(&amp;results)) {
+    Serial.print(&quot;Code: 0x&quot;);
+    Serial.println(results.value, HEX);
+    irrecv.resume(); <span class="c">// Receive the next value</span>
+  }
+}</code></pre></figure>
+<figure class="snippet"><figcaption><span class="file">Carousel sketch</span>Mapping those codes to actions. Holding a button sends a repeat code, which gets ignored so one press means one move.</figcaption><pre><code>void handleIRCode(unsigned long code) {
+  <span class="c">// Ignore repeat code (when holding button down)</span>
+  if (code == IR_REPEAT_CODE) {
+    return;
+  }
+
+  if (code == IR_CODE_NEXT_ARROW) {
+    <span class="c">// &gt;&gt;| : move to next panel (same as Next button)</span>
+    handleNextPress();
+
+  } else if (code == IR_CODE_PREV_ARROW) {
+    <span class="c">// |&lt;&lt; : move to previous panel</span>
+    handlePrevPress();
+
+  } else if (code == IR_CODE_NUM_2) {
+    <span class="c">// Jump to Panel 2</span>
+    goToScene(2);
+
+  } else if (code == IR_CODE_NUM_3) {
+    <span class="c">// Jump to Panel 3</span>
+    goToScene(3);
+
+  } else if (code == IR_CODE_NUM_4) {
+    <span class="c">// Jump to Panel 4 (&quot;The End&quot; side)</span>
+    goToScene(4);
+
+  } else if (code == IR_CODE_FUNC_STOP) {
+    <span class="c">// FUNC/STOP : full reset to Panel 1</span>
+    handleResetPress();
+
+  } else {
+    <span class="c">// Some other button - ignore</span>
+  }
+}</code></pre></figure>
+<figure class="snippet"><figcaption><span class="file">Carousel sketch</span>Positioning: the code tracks where the motor is in steps and moves the difference, so jumps and resets always land on a panel.</figcaption><pre><code>const int STEPS_PER_REV = 2048;
+const int STEPS_PER_90  = STEPS_PER_REV / 4;
+
+<span class="c">// ...</span>
+
+<span class="c">// Move stepper so that positionIndex = 0,1,2,3 matches 0°,90°,180°,270°</span>
+void moveToPositionIndex(int index) {
+  long targetSteps = (long)index * (long)STEPS_PER_90;
+  long stepsToMove = targetSteps - currentStepPosition;
+
+  <span class="c">// Positive steps = one direction, negative = opposite</span>
+  myStepper.step(stepsToMove);
+
+  currentStepPosition = targetSteps;
+}</code></pre></figure>
+</div>
+</details>
           <div class="gallery" aria-label="Carousel of Creation photos">
             <button class="shot" type="button" style="--ar:0.667" data-src="media/coc-carousel.jpg" data-cap="The finished carousel with the laser-cut story panels in place."><img src="media/coc-carousel-t.jpg" alt="Finished 3D printed carousel with wooden story panels" loading="lazy" decoding="async"></button>
             <button class="shot" type="button" style="--ar:0.75" data-src="media/coc-panels.jpg" data-cap="The laser-cut wood story panels, made at the MC Innovation Center."><img src="media/coc-panels-t.jpg" alt="Laser-cut wood sheet with illustrated story panels" loading="lazy" decoding="async"></button>
@@ -384,10 +561,10 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
           <p class="meta">Team Archimedes · 2024 season</p>
           <dl class="results">
             <div><dt>1st place</dt><dd>Southern Regional</dd></div>
-            <div><dt>29th</dt><dd>International obstacle course</dd></div>
-            <div><dt>32nd of 75</dt><dd>International, high school overall</dd></div>
+            <div><dt>32nd of 75</dt><dd>High school overall, International Challenge</dd></div>
+            <div><dt>29th</dt><dd>Obstacle course, International Challenge</dd></div>
           </dl>
-          <p>An underwater remotely operated vehicle we built and piloted for the SeaPerch challenge. After winning the Southern Regional, our team qualified for the 2024 International SeaPerch Challenge at the University of Maryland and went up against 75 high school teams from around the world.</p>
+          <p>An underwater remotely operated vehicle we built and piloted for the SeaPerch challenge. After winning the Southern Regional, our team qualified for the 2024 International SeaPerch Challenge at the University of Maryland, where we placed 32nd of 75 teams in the high school class against teams from across the U.S. and abroad.</p>
           <div class="gallery" aria-label="SeaPerch ROV photos">
             <button class="shot" type="button" style="--ar:0.75" data-src="media/sp-rov.jpg" data-cap="Our ROV: a PVC frame with foam floats and motor mounts."><img src="media/sp-rov-t.jpg" alt="Close-up of a PVC-frame SeaPerch ROV with foam floats" loading="lazy" decoding="async"></button>
             <button class="shot" type="button" style="--ar:1.333" data-src="media/sp-underwater.jpg" data-cap="Underwater during a pool run."><img src="media/sp-underwater-t.jpg" alt="The ROV underwater near a course obstacle" loading="lazy" decoding="async"></button>
@@ -406,19 +583,19 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
             <h3>RFID Clock-In System</h3>
             <span class="status hollow">Working prototype</span>
           </div>
-          <p>A badge-tap time clock for shift work. A Raspberry Pi reads RFID cards through an RC522 module, tracks clock-ins and clock-outs in Python, and shows the result on a 20x4 LCD: who just clocked in, how long they worked, and what they earned for the shift. It all lives in a 3D printed enclosure with the screen on top and the reader below.</p>
+          <p>A badge-tap time clock for shift work. A Raspberry Pi reads RFID cards through an RC522 module, tracks clock-ins and clock-outs in Python, and shows the result on a 20x4 character LCD (LCD2004): who just clocked in, how long they worked, and what they earned for the shift. It all lives in a 3D printed enclosure with the screen on top and the reader below.</p>
           <div class="gallery" aria-label="RFID Clock-In System photos and video">
             <button class="shot" type="button" style="--ar:0.562" data-type="video" data-src="media/rfid-demo.mp4" data-poster="media/rfid-demo-poster.jpg" data-cap="Demo: tap a card to clock in, tap again to clock out. The LCD shows time worked and pay earned.">
               <video src="media/rfid-demo.mp4" poster="media/rfid-demo-poster.jpg" muted loop playsinline autoplay preload="metadata" aria-label="Demo video of the RFID clock-in system"></video>
               <span class="badge">Demo</span>
             </button>
-            <button class="shot" type="button" style="--ar:0.562" data-src="media/rfid-enclosure.jpg" data-cap="The 3D printed enclosure: 20x4 LCD on top, RFID reader in the base."><img src="media/rfid-enclosure-t.jpg" alt="Red and green 3D printed enclosure with a blue LCD screen" loading="lazy" decoding="async"></button>
+            <button class="shot" type="button" style="--ar:0.562" data-src="media/rfid-enclosure.jpg" data-cap="The 3D printed enclosure: LCD2004 (20x4) display on top, RFID reader in the base."><img src="media/rfid-enclosure-t.jpg" alt="Red and green 3D printed enclosure with a blue LCD screen" loading="lazy" decoding="async"></button>
             <button class="shot" type="button" style="--ar:1.333" data-src="media/rfid-breadboard.jpg" data-cap="Breadboard prototype, before the enclosure."><img src="media/rfid-breadboard-t.jpg" alt="Breadboard with wiring and a blue LCD showing a clock-out message" loading="lazy" decoding="async"></button>
             <button class="shot" type="button" style="--ar:1.333" data-src="media/rfid-pi.jpg" data-cap="The Raspberry Pi and ribbon cable feeding the breadboard."><img src="media/rfid-pi-t.jpg" alt="Raspberry Pi in a clear case connected by ribbon cable" loading="lazy" decoding="async"></button>
             <button class="shot" type="button" style="--ar:1.333" data-src="media/rfid-terminal.jpg" data-cap="Debugging tag reads in Python on the Pi."><img src="media/rfid-terminal-t.jpg" alt="Terminal output showing detected RFID tag numbers" loading="lazy" decoding="async"></button>
           </div>
           <ul class="tags" aria-label="Tools used">
-            <li>Raspberry Pi</li><li>Python</li><li>RC522 RFID</li><li>20x4 LCD</li><li>3D printing</li>
+            <li>Raspberry Pi</li><li>Python</li><li>RC522 RFID</li><li>LCD2004 (20x4)</li><li>3D printing</li>
           </ul>
         </article>
 
@@ -434,49 +611,6 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
           <ul class="tags" aria-label="Tools used"><li>JavaScript</li><li>Cloudflare</li><li>Vercel</li><li>AI-assisted dev</li></ul>
         </article>
 
-      </div>
-    </div>
-  </section>
-
-  <section class="wrap" id="unfinished">
-    <div class="row">
-      <h2 class="label">Unfinished builds</h2>
-      <div class="content projects">
-        <p class="intro">Not everything ships. These two never made it to the finish line, but they taught me a lot about scoping and picking the right tool.</p>
-
-        <article class="proj">
-          <div class="proj-head">
-            <h3>Quoridor in Unity</h3>
-            <span class="status hollow">Shelved</span>
-          </div>
-          <p>Quoridor is one of my favorite board games, and I think it's seriously underrated. You race your pawn to the other side of the board while placing walls to slow your opponent down, but you can never fully block their path. I wanted to give it the hype it deserves, so I started building a digital version in Unity.</p>
-          <p>I got a lot of it running: a 9x9 board generated from code, pawns that highlight their legal moves, and horizontal and vertical walls with live placement previews, all in 3D. But building the mechanics from scratch turned out to be harder than it looked. Rules like legal wall placement and always leaving a path to the goal are easy to explain and surprisingly tricky to code, and I set the project aside before it was finished. It's still one I want to come back to.</p>
-          <div class="gallery" aria-label="Quoridor in Unity screenshots">
-            <button class="shot" type="button" style="--ar:1.510" data-src="media/qd-3d.jpg" data-cap="The 3D board: both pawns, placed walls, and highlighted legal moves."><img src="media/qd-3d-t.jpg" alt="3D Quoridor board with a black and a white pawn and green walls" loading="lazy" decoding="async"></button>
-            <button class="shot" type="button" style="--ar:1.518" data-src="media/qd-walls.jpg" data-cap="Top-down view with walls placed and the pawn's legal moves lit up."><img src="media/qd-walls-t.jpg" alt="Top-down Quoridor grid with green walls and highlighted tiles" loading="lazy" decoding="async"></button>
-            <button class="shot" type="button" style="--ar:1.675" data-src="media/qd-editor.jpg" data-cap="Placing a wall in the Unity editor."><img src="media/qd-editor-t.jpg" alt="Unity editor scene view with a wall being placed on the board" loading="lazy" decoding="async"></button>
-            <button class="shot" type="button" style="--ar:0.753" data-src="media/qd-inspector.jpg" data-cap="The GameManager: separate Grid Generator, Pawn Controller, and Wall Placer scripts."><img src="media/qd-inspector-t.jpg" alt="Unity inspector showing Grid Generator, Pawn Controller and Wall Placer scripts" loading="lazy" decoding="async"></button>
-            <button class="shot" type="button" style="--ar:1.117" data-src="media/qd-moves.jpg" data-cap="An early build: move highlighting working on the generated grid."><img src="media/qd-moves-t.jpg" alt="Early top-down board with blue highlighted move tiles" loading="lazy" decoding="async"></button>
-          </div>
-          <ul class="tags" aria-label="Tools used"><li>Unity</li><li>C#</li><li>Game logic</li></ul>
-        </article>
-
-        <article class="proj">
-          <div class="proj-head">
-            <h3>Sky Zone Party Host Assigner</h3>
-            <span class="status hollow">Working demo</span>
-          </div>
-          <p>At Sky Zone, a manager assigns a party host to every party customers book. With more than 20 parties in just two days, picking the right host for each one without double-booking anyone was a lot for one person. So I started building a Unity app for it: enter the party, enter your list of hosts, click one button, and it assigns someone.</p>
-          <p>It looked random, but it wasn't. The app weighed each host's existing parties, their availability, and a few other factors to pick the best fit with no time clashes. I got it to a working demo with screens for adding hosts and parties, a host roster, and a parties list showing who got assigned where. Then I stopped. The logic was getting complicated, I realized building every screen from scratch in Unity wasn't the way to go, and the park solved the problem by giving party assignments to another person.</p>
-          <div class="gallery" aria-label="Sky Zone Party Host Assigner screenshots">
-            <button class="shot" type="button" style="--ar:1.850" data-src="media/pa-menu.jpg" data-cap="The main menu in the Unity editor: add hosts, add parties, and view both."><img src="media/pa-menu-t.jpg" alt="Unity editor showing the Skyzone Party Host Assigner main menu" loading="lazy" decoding="async"></button>
-            <button class="shot" type="button" style="--ar:2.102" data-src="media/pa-add-party.jpg" data-cap="Adding a party: time, date, birthday person, and party area."><img src="media/pa-add-party-t.jpg" alt="Add Party form with time, date, name and area fields" loading="lazy" decoding="async"></button>
-            <button class="shot" type="button" style="--ar:1.940" data-src="media/pa-hosts.jpg" data-cap="The party host roster."><img src="media/pa-hosts-t.jpg" alt="Party Hosts list with delete buttons" loading="lazy" decoding="async"></button>
-            <button class="shot" type="button" style="--ar:1.780" data-src="media/pa-parties.jpg" data-cap="Parties with their automatically assigned hosts."><img src="media/pa-parties-t.jpg" alt="View Parties list with a host assigned to each party" loading="lazy" decoding="async"></button>
-            <button class="shot" type="button" style="--ar:0.935" data-src="media/pa-uimanager.jpg" data-cap="The UI Manager script wiring every panel, input, and dropdown together."><img src="media/pa-uimanager-t.jpg" alt="Unity inspector for the UI Manager script listing panels and input fields" loading="lazy" decoding="async"></button>
-          </div>
-          <ul class="tags" aria-label="Tools used"><li>Unity</li><li>C#</li><li>Scheduling logic</li></ul>
-        </article>
       </div>
     </div>
   </section>
@@ -546,6 +680,49 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
           <div><dt>Fabrication</dt><dd>CAD modeling, 3D printing, laser cutting</dd></div>
           <div><dt>Languages</dt><dd>English, Amharic, and Tigrinya (fluent) · Arabic (conversational)</dd></div>
         </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap" id="experiments">
+    <div class="row">
+      <h2 class="label">Experiments &amp; lessons learned</h2>
+      <div class="content projects">
+        <p class="intro">Two side projects I took as far as a prototype. Neither shipped, but both taught me about scoping a project and picking the right tool for it.</p>
+
+        <article class="proj">
+          <div class="proj-head">
+            <h3>Quoridor in Unity</h3>
+            <span class="status hollow">Paused</span>
+          </div>
+          <p>Quoridor is one of my favorite board games, and I think it's seriously underrated. You race your pawn to the other side of the board while placing walls to slow your opponent down, but you can never fully block their path. I wanted to give it the hype it deserves, so I started building a digital version in Unity.</p>
+          <p>I got a lot of it running: a 9x9 board generated from code, pawns that highlight their legal moves, and horizontal and vertical walls with live placement previews, all in 3D. But building the mechanics from scratch turned out to be harder than it looked. Rules like legal wall placement and always leaving a path to the goal are easy to explain and surprisingly tricky to code, and I set the project aside before it was finished. It's still one I want to come back to.</p>
+          <div class="gallery" aria-label="Quoridor in Unity screenshots">
+            <button class="shot" type="button" style="--ar:1.510" data-src="media/qd-3d.jpg" data-cap="The 3D board: both pawns, placed walls, and highlighted legal moves."><img src="media/qd-3d-t.jpg" alt="3D Quoridor board with a black and a white pawn and green walls" loading="lazy" decoding="async"></button>
+            <button class="shot" type="button" style="--ar:1.518" data-src="media/qd-walls.jpg" data-cap="Top-down view with walls placed and the pawn's legal moves lit up."><img src="media/qd-walls-t.jpg" alt="Top-down Quoridor grid with green walls and highlighted tiles" loading="lazy" decoding="async"></button>
+            <button class="shot" type="button" style="--ar:1.675" data-src="media/qd-editor.jpg" data-cap="Placing a wall in the Unity editor."><img src="media/qd-editor-t.jpg" alt="Unity editor scene view with a wall being placed on the board" loading="lazy" decoding="async"></button>
+            <button class="shot" type="button" style="--ar:0.753" data-src="media/qd-inspector.jpg" data-cap="The GameManager: separate Grid Generator, Pawn Controller, and Wall Placer scripts."><img src="media/qd-inspector-t.jpg" alt="Unity inspector showing Grid Generator, Pawn Controller and Wall Placer scripts" loading="lazy" decoding="async"></button>
+            <button class="shot" type="button" style="--ar:1.117" data-src="media/qd-moves.jpg" data-cap="An early build: move highlighting working on the generated grid."><img src="media/qd-moves-t.jpg" alt="Early top-down board with blue highlighted move tiles" loading="lazy" decoding="async"></button>
+          </div>
+          <ul class="tags" aria-label="Tools used"><li>Unity</li><li>C#</li><li>Game logic</li></ul>
+        </article>
+
+        <article class="proj">
+          <div class="proj-head">
+            <h3>Sky Zone Party Host Assigner</h3>
+            <span class="status hollow">Working demo</span>
+          </div>
+          <p>At Sky Zone, a manager assigns a party host to every party customers book. With more than 20 parties in just two days, picking the right host for each one without double-booking anyone was a lot for one person. So I started building a Unity app for it: enter the party, enter your list of hosts, click one button, and it assigns someone.</p>
+          <p>It looked random, but it wasn't. The app weighed each host's existing parties, their availability, and a few other factors to pick the best fit with no time clashes. I got it to a working demo with screens for adding hosts and parties, a host roster, and a parties list showing who got assigned where. Then I stopped. The logic was getting complicated, I realized building every screen from scratch in Unity wasn't the way to go, and the park solved the problem by giving party assignments to another person.</p>
+          <div class="gallery" aria-label="Sky Zone Party Host Assigner screenshots">
+            <button class="shot" type="button" style="--ar:1.850" data-src="media/pa-menu.jpg" data-cap="The main menu in the Unity editor: add hosts, add parties, and view both."><img src="media/pa-menu-t.jpg" alt="Unity editor showing the Skyzone Party Host Assigner main menu" loading="lazy" decoding="async"></button>
+            <button class="shot" type="button" style="--ar:2.102" data-src="media/pa-add-party.jpg" data-cap="Adding a party: time, date, birthday person, and party area."><img src="media/pa-add-party-t.jpg" alt="Add Party form with time, date, name and area fields" loading="lazy" decoding="async"></button>
+            <button class="shot" type="button" style="--ar:1.940" data-src="media/pa-hosts.jpg" data-cap="The party host roster."><img src="media/pa-hosts-t.jpg" alt="Party Hosts list with delete buttons" loading="lazy" decoding="async"></button>
+            <button class="shot" type="button" style="--ar:1.780" data-src="media/pa-parties.jpg" data-cap="Parties with their automatically assigned hosts."><img src="media/pa-parties-t.jpg" alt="View Parties list with a host assigned to each party" loading="lazy" decoding="async"></button>
+            <button class="shot" type="button" style="--ar:0.935" data-src="media/pa-uimanager.jpg" data-cap="The UI Manager script wiring every panel, input, and dropdown together."><img src="media/pa-uimanager-t.jpg" alt="Unity inspector for the UI Manager script listing panels and input fields" loading="lazy" decoding="async"></button>
+          </div>
+          <ul class="tags" aria-label="Tools used"><li>Unity</li><li>C#</li><li>Scheduling logic</li></ul>
+        </article>
       </div>
     </div>
   </section>
