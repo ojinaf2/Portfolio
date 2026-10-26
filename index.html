@@ -236,6 +236,39 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
 .lb button:hover{border-color:#A9C1F5; color:#A9C1F5}
 .lb .lb-close{position:absolute; top:calc(env(safe-area-inset-top, 0px) + 12px); right:max(12px, env(safe-area-inset-right, 0px))}
 
+/* Parameter study chart and data tables */
+.pfig{margin:0; padding:18px; border:1px solid var(--line); border-radius:14px; display:flex; flex-direction:column; gap:12px; min-width:0}
+.pfig-title{font-weight:600; font-size:15px}
+.pfig-note{font-size:13.5px; color:var(--muted); max-width:70ch}
+.pstudy-wrap{position:relative}
+.pstudy{display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:18px}
+.ps-panel{min-width:0}
+.ps-panel h4{margin:0; font-size:14px; font-weight:600}
+.ps-panel p{margin:2px 0 4px; font-size:12.5px; color:var(--muted)}
+.ps-panel svg{display:block; width:100%; height:auto; overflow:visible}
+.ps-grid{stroke:var(--line); stroke-width:1}
+.ps-ylab, .ps-xlab{fill:var(--muted); font-size:11px; font-family:var(--font-sans); font-variant-numeric:tabular-nums}
+.ps-range{stroke:var(--accent); stroke-width:6; stroke-linecap:round; opacity:.22}
+.ps-line{fill:none; stroke:var(--accent); stroke-width:2; stroke-linejoin:round}
+.ps-dot{fill:var(--accent); stroke:var(--bg); stroke-width:2}
+.ps-val{fill:var(--fg); font-size:11.5px; font-weight:600; font-family:var(--font-sans)}
+.ps-hit{fill:transparent; cursor:pointer; outline:none}
+.ps-hit:focus-visible{stroke:var(--accent); stroke-width:1.5}
+.ps-tip{position:absolute; z-index:3; transform:translate(-50%, calc(-100% - 10px)); background:var(--fg); color:#FFFFFF; font-size:12.5px; line-height:1.4; padding:7px 10px; border-radius:8px; pointer-events:none; white-space:nowrap; display:flex; flex-direction:column; font-variant-numeric:tabular-nums}
+.ps-tip strong{font-weight:600}
+.numbers > summary{cursor:pointer; font-size:14px; font-weight:500; color:var(--accent-ink)}
+.numbers[open] > summary{margin-bottom:10px}
+.table-scroll{overflow-x:auto; max-width:100%}
+.data-table{border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums}
+.data-table caption{text-align:left; font-weight:600; font-size:15px; padding-bottom:8px}
+.data-table th{font-weight:500; color:var(--muted); font-size:13px; text-align:left; padding:8px 18px 8px 0; border-bottom:1px solid var(--line); white-space:nowrap}
+.data-table td{padding:8px 18px 8px 0; border-bottom:1px solid var(--line); white-space:nowrap}
+.data-table tr.miss td{font-weight:600}
+.table-note{font-size:13.5px; color:var(--muted); margin-top:8px; max-width:70ch}
+@media (max-width: 700px){
+  .pstudy{grid-template-columns:minmax(0, 1fr)}
+}
+
 /* Resume viewer */
 .rv{
   position:fixed; inset:0; z-index:60; background:rgba(10,15,30,.72);
@@ -624,7 +657,96 @@ void moveToPositionIndex(int index) {
             <span class="status hollow">Working prototype</span>
           </div>
           <p class="meta">Co-leader · Fall 2025</p>
-          <p>A badge-tap time clock for shift work. A Raspberry Pi reads RFID badges through an RC522 module over SPI, and a 20x4 character LCD (LCD2004) shows who just clocked in, how long they worked, and what they earned for the shift. I programmed the Python side: badge authentication, UID parsing, GPIO control, timestamp logging, and pay calculation. It all lives in a 3D printed enclosure with the screen on top and the reader below.</p>
+          <p>A badge-tap time clock for shift work. A Raspberry Pi reads RFID badges through an RC522 module over SPI, and a 20x4 character LCD (LCD2004) shows who just clocked in, how long they worked, and what they earned for the shift. I programmed the Python side: badge authentication, UID parsing, GPIO control, timestamp logging, and pay calculation. The LCD runs in 4-bit parallel mode straight off the Pi's GPIO pins, a reset button on an interrupt clears every open session, and repeat reads from a badge left on the reader get filtered out. It all lives in a 3D printed enclosure with the screen on top and the reader below.</p>
+<details class="code">
+<summary>View code excerpts <span class="count">3 excerpts, Python</span></summary>
+<div class="code-body">
+<figure class="snippet"><figcaption><span class="file">ClockInClockOut.py (breadboard version)</span>Hardware setup: the 20x4 LCD runs in 4-bit parallel mode straight off the GPIO pins, the RC522 reader sits on the SPI bus, and the reset button uses the internal pull-up.</figcaption><pre><code><span class="c"># ---- LCD pin mapping (BCM numbers that match the cobbler labels) ----</span>
+
+LCD_E  = 5
+LCD_RS = 26
+LCD_D4 = 6
+LCD_D5 = 13
+LCD_D6 = 19
+LCD_D7 = 12
+
+lcd = CharLCD(
+    numbering_mode=GPIO.BCM,
+    pin_rs=LCD_RS,
+    pin_e=LCD_E,
+    pins_data=[LCD_D4, LCD_D5, LCD_D6, LCD_D7],
+    cols=20,
+    rows=4
+)
+
+<span class="c"># ---- RFID reader (RC522) ----</span>
+<span class="c"># Wire RC522: VCC-&gt;3V3, GND-&gt;GND, SDA-&gt;CE0, SCK-&gt;SCLK, MOSI-&gt;MOSI, MISO-&gt;MISO, RST-&gt;25</span>
+reader = SimpleMFRC522()
+
+<span class="c"># ---- Reset button ----</span>
+<span class="c"># One leg of button -&gt; GPIO18, other leg -&gt; GND</span>
+RESET_PIN = 18
+GPIO.setup(RESET_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)</code></pre></figure>
+<figure class="snippet"><figcaption><span class="file">ClockInClockOut.py (breadboard version)</span>Clocking in and out: the first tap starts a session for that badge, and the next tap ends it and shows how long it lasted.</figcaption><pre><code>def handle_tag(tag_id):
+    &quot;&quot;&quot;
+    If tag not in sessions -&gt; clock in.
+    If tag already in sessions -&gt; clock out, show time.
+    &quot;&quot;&quot;
+    global sessions
+
+    now = time.time()
+
+    if tag_id in sessions:
+        <span class="c"># ----- Clock out -----</span>
+        start_time = sessions.pop(tag_id)
+        elapsed = now - start_time
+        pretty = format_duration(elapsed)
+
+        lcd.clear()
+        lcd.write_string(&quot;Checked out!&quot;)
+        lcd.crlf()
+        lcd.write_string(f&quot;For {pretty}&quot;)
+        time.sleep(4)  <span class="c"># show message a bit</span>
+
+    else:
+        <span class="c"># ----- Clock in -----</span>
+        sessions[tag_id] = now
+
+        lcd.clear()
+        lcd.write_string(&quot;Clocked in!&quot;)
+        lcd.crlf()
+        lcd.write_string(&quot;Have a nice day&quot;)
+        time.sleep(2)
+
+    <span class="c"># Back to idle screen either way</span>
+    show_idle_screen()</code></pre></figure>
+<figure class="snippet"><figcaption><span class="file">ClockInClockOut.py (breadboard version)</span>A badge left on the reader gets read over and over, so repeat reads of the same badge within 1.5 seconds are ignored. The reset button runs on an interrupt with its own debounce.</figcaption><pre><code><span class="c"># Attach reset button interrupt</span>
+GPIO.add_event_detect(
+    RESET_PIN,
+    GPIO.FALLING,
+    callback=reset_pressed,
+    bouncetime=300
+)
+
+<span class="c"># ...</span>
+
+        while True:
+            <span class="c"># Blocks until a tag is detected</span>
+            tag_id, text = reader.read()
+            now = time.time()
+
+            <span class="c"># Debounce: ignore rapid repeat reads of same tag</span>
+            if tag_id == last_tag_id and (now - last_tag_time) &lt; MIN_TAP_INTERVAL:
+                time.sleep(0.3)
+                continue
+
+            last_tag_id = tag_id
+            last_tag_time = now
+
+            print(f&quot;Tag detected: {tag_id}&quot;)
+            handle_tag(tag_id)</code></pre></figure>
+</div>
+</details>
           <div class="gallery" aria-label="RFID Clock-In System photos and video">
             <button class="shot" type="button" style="--ar:0.562" data-type="video" data-src="media/rfid-demo.mp4" data-poster="media/rfid-demo-poster.jpg" data-cap="Demo: tap a card to clock in, tap again to clock out. The LCD shows time worked and pay earned.">
               <video src="media/rfid-demo.mp4" poster="media/rfid-demo-poster.jpg" muted loop playsinline autoplay preload="metadata" aria-label="Demo video of the RFID clock-in system"></video>
@@ -646,14 +768,106 @@ void moveToPositionIndex(int index) {
             <h3>Neural Networks and GANs</h3>
             <span class="status">In progress</span>
           </div>
-          <p class="meta">University of Maryland · Fall 2026</p>
+          <p class="meta">University of Maryland · ENEE 301 · Fall 2026</p>
           <dl class="results">
-            <div><dt>97.3%</dt><dd>Accuracy on 10,000 test digits</dd></div>
-            <div><dt>26</dt><dd>Network configurations compared</dd></div>
-            <div><dt>20,000</dt><dd>Photos in the face GAN's training set</dd></div>
+            <div><dt>97.3%</dt><dd>Best accuracy on 10,000 test digits</dd></div>
+            <div><dt>26 runs</dt><dd>Across 9 network settings</dd></div>
+            <div><dt>3 of 4</dt><dd>Of my own hand-drawn digits read right</dd></div>
           </dl>
-          <p>A handwritten digit recognizer built from scratch in Python and NumPy. I ran a parameter study across 26 network configurations and reached 97.3% accuracy on the 10,000-image test set. From there I moved to generative models, training GANs in PyTorch on a Colab GPU, including a face generator trained on 20,000 photos.</p>
-          <ul class="tags" aria-label="Tools used"><li>Python</li><li>NumPy</li><li>PyTorch</li><li>Google Colab</li></ul>
+          <p>A three-layer network that reads handwritten digits, written in Python with NumPy and no machine learning framework. It learns by backpropagation on all 60,000 MNIST training images, then gets scored on 10,000 images it has never seen.</p>
+          <p>Accuracy can swing by about a point between runs just from the random starting weights, so I trained each setting more than once and compared averages. More epochs helped more than anything else. Too high a learning rate (0.6) hurt badly, about four points lower, and growing the hidden layer past 200 nodes barely moved the needle. The best setup reached 97.3%.</p>
+          <figure class="pfig">
+            <figcaption class="pfig-title">Parameter study: average test accuracy for each setting</figcaption>
+            <div class="pstudy-wrap">
+              <div class="pstudy" id="pstudy"></div>
+              <div class="ps-tip" id="ps-tip" hidden></div>
+            </div>
+            <p class="pfig-note">Dots are averages and the bars span the best and worst run. All three panels share the same accuracy scale. Hover over or tap a dot for exact numbers.</p>
+            <details class="numbers">
+              <summary>See the numbers</summary>
+              <div class="table-scroll">
+                <table class="data-table">
+                  <thead><tr><th scope="col">Learning rate</th><th scope="col">Hidden nodes</th><th scope="col">Epochs</th><th scope="col">Average accuracy</th><th scope="col">Range across runs</th></tr></thead>
+                  <tbody>
+                  <tr><td>0.1</td><td>100</td><td>1</td><td>94.56%</td><td>94.38 to 94.66%</td></tr>
+                  <tr><td>0.2</td><td>100</td><td>1</td><td>94.84%</td><td>94.80 to 94.89%</td></tr>
+                  <tr><td>0.3</td><td>100</td><td>1</td><td>94.62%</td><td>93.97 to 95.07%</td></tr>
+                  <tr><td>0.6</td><td>100</td><td>1</td><td>90.61%</td><td>89.65 to 91.71%</td></tr>
+                  <tr><td>0.1</td><td>200</td><td>1</td><td>95.55%</td><td>95.37 to 95.72%</td></tr>
+                  <tr><td>0.1</td><td>300</td><td>1</td><td>95.58%</td><td>95.42 to 95.75%</td></tr>
+                  <tr><td>0.1</td><td>200</td><td>2</td><td>96.79%</td><td>96.77 to 96.80%</td></tr>
+                  <tr><td>0.1</td><td>200</td><td>3</td><td>97.05%</td><td>96.85 to 97.23%</td></tr>
+                  <tr><td>0.1</td><td>200</td><td>5</td><td>97.32%</td><td>97.18 to 97.42%</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          </figure>
+          <p>Then I tested it on digits I drew myself in Paint. At the better settings it read my 2, 3, and 5 correctly every time, but it kept calling my 8 a 3. Close the left side of a 3 and you get an 8, so the network was going with the shapes it was most sure about. My digits were drawn with a mouse instead of a pen, and that small difference was enough to trip it up. That taught me more than the 97% did: doing well on a test set isn't the same as handling new, real input.</p>
+          <div class="table-scroll">
+            <table class="data-table">
+              <caption>My own handwriting</caption>
+              <thead><tr><th scope="col">Digit drawn</th><th scope="col">Most common answer</th><th scope="col">Correct, all runs</th><th scope="col">Correct, best settings</th></tr></thead>
+              <tbody>
+                <tr><td>2</td><td>2</td><td>22 of 26</td><td>9 of 9</td></tr>
+                <tr><td>3</td><td>3</td><td>26 of 26</td><td>9 of 9</td></tr>
+                <tr><td>5</td><td>5</td><td>26 of 26</td><td>9 of 9</td></tr>
+                <tr class="miss"><td>8</td><td>3</td><td>3 of 26</td><td>2 of 9</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="table-note">Drawn in Paint on a 28x28 canvas. Best settings means 200 hidden nodes and two or more epochs.</p>
+          <p>From there I moved on to generative models, training GANs in PyTorch on a Colab GPU, including a face generator trained on 20,000 photos.</p>
+<details class="code">
+<summary>View code excerpts <span class="count">3 excerpts, Python and NumPy</span></summary>
+<div class="code-body">
+<figure class="snippet"><figcaption><span class="file">Neural_Network_Lab13.py</span>The training step: a forward pass through both layers, then the error flows backward to update each weight matrix. The class structure follows Tariq Rashid&#x27;s Make Your Own Neural Network, which the lab is built on.</figcaption><pre><code>    def train(self, inputs_list, targets_list):
+        inputs = numpy.array(inputs_list, ndmin=2).T
+        targets = numpy.array(targets_list, ndmin=2).T
+
+        hidden_inputs = numpy.dot(self.wih, inputs)
+        hidden_outputs = self.activation_function(hidden_inputs)
+
+        final_inputs = numpy.dot(self.who, hidden_outputs)
+        final_outputs = self.activation_function(final_inputs)
+
+        output_errors = targets - final_outputs
+        hidden_errors = numpy.dot(self.who.T, output_errors)
+
+        self.who += self.lr * numpy.dot((output_errors * final_outputs * (1.0 - final_outputs)), numpy.transpose(hidden_outputs))
+
+        self.wih += self.lr * numpy.dot((hidden_errors * hidden_outputs * (1.0 - hidden_outputs)), numpy.transpose(inputs))</code></pre></figure>
+<figure class="snippet"><figcaption><span class="file">Neural_Network_Lab13.py</span>Reading my own drawings. The lab handout&#x27;s scipy.misc.imread no longer exists in SciPy, so I used imageio instead, then inverted and scaled each drawing the same way as the training data.</figcaption><pre><code>import imageio.v2 as imageio
+img_array = imageio.imread(&quot;Image_5(Thick).png&quot;, mode=&#x27;F&#x27;)
+
+img_data = 255.0 - img_array.reshape(784)
+img_data = (img_data / 255.0 * 0.99) + 0.01
+
+outputs = n.query(img_data)
+print(&quot;network says:&quot;, numpy.argmax(outputs))</code></pre></figure>
+<figure class="snippet"><figcaption><span class="file">Neural_Network_Lab13.py</span>Scoring: the network&#x27;s top guess for each of the 10,000 test images, checked against the true label.</figcaption><pre><code>scorecard = []
+
+for record in test_data_list:
+    all_values = record.split(&#x27;,&#x27;)
+    correct_label = int(all_values[0])
+
+    inputs = (numpy.asarray(all_values[1:], dtype = float) / 255.0 * 0.99) + 0.01
+
+    outputs = n.query(inputs)
+    label = numpy.argmax(outputs)
+
+    if (label == correct_label):
+        scorecard.append(1)
+    else:
+        scorecard.append(0)
+        pass
+    pass
+
+scorecard_array = numpy.asarray(scorecard)
+print(&quot;performance =&quot;, scorecard_array.sum() / scorecard_array.size)</code></pre></figure>
+</div>
+</details>
+          <ul class="tags" aria-label="Tools used"><li>Python</li><li>NumPy</li><li>PyTorch</li><li>Google Colab</li><li>MNIST</li></ul>
         </article>
 
         <!-- Puzzlr -->
@@ -934,6 +1148,82 @@ void moveToPositionIndex(int index) {
     var dx = e.changedTouches[0].clientX - touchX;
     if(Math.abs(dx) > 40) step(dx < 0 ? 1 : -1);
     touchX = null;
+  });
+})();
+
+/* Parameter study chart. Numbers come from my ENEE 301 lab report. */
+(function(){
+  var root = document.getElementById('pstudy');
+  var tip = document.getElementById('ps-tip');
+  if (!root || !tip) return;
+  var Y0 = 89, Y1 = 98, W = 260, H = 180, L = 38, R = 12, T = 12, B = 26;
+  var panels = [
+    { title: 'Learning rate', sub: '100 hidden nodes, 1 epoch', name: 'Learning rate', ticks: [0.1, 0.2, 0.3, 0.6],
+      fmt: function(v){ return v.toFixed(1); },
+      pts: [[0.1, 94.56, 94.38, 94.66], [0.2, 94.84, 94.80, 94.89], [0.3, 94.62, 93.97, 95.07], [0.6, 90.61, 89.65, 91.71]],
+      label: { i: 3, dx: -9, dy: 14 } },
+    { title: 'Hidden nodes', sub: 'Learning rate 0.1, 1 epoch', name: 'Hidden nodes', ticks: [100, 200, 300],
+      fmt: String,
+      pts: [[100, 94.56, 94.38, 94.66], [200, 95.55, 95.37, 95.72], [300, 95.58, 95.42, 95.75]] },
+    { title: 'Epochs', sub: 'Learning rate 0.1, 200 hidden nodes', name: 'Epochs', ticks: [1, 2, 3, 5],
+      fmt: String,
+      pts: [[1, 95.55, 95.37, 95.72], [2, 96.79, 96.77, 96.80], [3, 97.05, 96.85, 97.23], [5, 97.32, 97.18, 97.42]],
+      label: { i: 3, dx: 6, dy: 22 } }
+  ];
+  function xScale(p){
+    var a = p.ticks[0], b = p.ticks[p.ticks.length - 1], pad = (b - a) * 0.08;
+    return function(v){ return L + (v - (a - pad)) / ((b + pad) - (a - pad)) * (W - L - R); };
+  }
+  function y(v){ return T + (Y1 - v) / (Y1 - Y0) * (H - T - B); }
+  function f(n){ return n.toFixed(1); }
+  var html = '';
+  panels.forEach(function(p, pi){
+    var x = xScale(p), s = '';
+    [90, 92, 94, 96, 98].forEach(function(g){
+      s += '<line class="ps-grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + f(y(g)) + '" y2="' + f(y(g)) + '"/>';
+      s += '<text class="ps-ylab" x="' + (L - 6) + '" y="' + f(y(g)) + '" dy="0.32em" text-anchor="end">' + g + '%</text>';
+    });
+    p.ticks.forEach(function(t){
+      s += '<text class="ps-xlab" x="' + f(x(t)) + '" y="' + (H - 8) + '" text-anchor="middle">' + p.fmt(t) + '</text>';
+    });
+    p.pts.forEach(function(q){
+      s += '<line class="ps-range" x1="' + f(x(q[0])) + '" x2="' + f(x(q[0])) + '" y1="' + f(y(q[2])) + '" y2="' + f(y(q[3])) + '"/>';
+    });
+    s += '<polyline class="ps-line" points="' + p.pts.map(function(q){ return f(x(q[0])) + ',' + f(y(q[1])); }).join(' ') + '"/>';
+    p.pts.forEach(function(q){
+      s += '<circle class="ps-dot" cx="' + f(x(q[0])) + '" cy="' + f(y(q[1])) + '" r="4.5"/>';
+    });
+    if (p.label){
+      var q = p.pts[p.label.i];
+      s += '<text class="ps-val" x="' + f(x(q[0]) + p.label.dx) + '" y="' + f(y(q[1]) + p.label.dy) + '" text-anchor="end">' + q[1].toFixed(1) + '%</text>';
+    }
+    p.pts.forEach(function(q, qi){
+      s += '<circle class="ps-hit" role="img" tabindex="0" r="15" cx="' + f(x(q[0])) + '" cy="' + f(y(q[1])) + '" data-p="' + pi + '" data-q="' + qi + '"'
+        + ' aria-label="' + p.name + ' ' + p.fmt(q[0]) + ': average ' + q[1].toFixed(2) + '%, range ' + q[2].toFixed(2) + ' to ' + q[3].toFixed(2) + '%"/>';
+    });
+    html += '<div class="ps-panel"><h4>' + p.title + '</h4><p>' + p.sub + '</p>'
+      + '<svg viewBox="0 0 ' + W + ' ' + H + '" aria-label="' + p.title + ' versus test accuracy">' + s + '</svg></div>';
+  });
+  root.innerHTML = html;
+
+  var wrap = root.parentNode;
+  function show(el){
+    var p = panels[+el.getAttribute('data-p')], q = p.pts[+el.getAttribute('data-q')];
+    tip.innerHTML = '<strong>' + p.name + ' ' + p.fmt(q[0]) + '</strong><span>' + q[1].toFixed(2) + '% average</span>'
+      + '<span>' + q[2].toFixed(2) + ' to ' + q[3].toFixed(2) + '% across runs</span>';
+    tip.hidden = false;
+    var r = el.getBoundingClientRect(), w = wrap.getBoundingClientRect(), half = tip.offsetWidth / 2;
+    var left = Math.max(half, Math.min(w.width - half, r.left + r.width / 2 - w.left));
+    tip.style.left = left + 'px';
+    tip.style.top = (r.top + r.height / 2 - w.top - 6) + 'px';
+  }
+  function hide(){ tip.hidden = true; }
+  root.querySelectorAll('.ps-hit').forEach(function(c){
+    c.addEventListener('pointerenter', function(){ show(c); });
+    c.addEventListener('pointerleave', hide);
+    c.addEventListener('focus', function(){ show(c); });
+    c.addEventListener('blur', hide);
+    c.addEventListener('click', function(){ show(c); });
   });
 })();
 
