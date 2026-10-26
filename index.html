@@ -264,9 +264,11 @@ code{font-family:var(--font-code); font-size:.88em; background:var(--wash); colo
 .data-table th{font-weight:500; color:var(--muted); font-size:13px; text-align:left; padding:8px 18px 8px 0; border-bottom:1px solid var(--line); white-space:nowrap}
 .data-table td{padding:8px 18px 8px 0; border-bottom:1px solid var(--line); white-space:nowrap}
 .data-table tr.miss td{font-weight:600}
+.pin-grid{display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:16px 28px; min-width:0}
 .table-note{font-size:13.5px; color:var(--muted); margin-top:8px; max-width:70ch}
 @media (max-width: 700px){
   .pstudy{grid-template-columns:minmax(0, 1fr)}
+  .pin-grid{grid-template-columns:minmax(0, 1fr)}
 }
 
 /* Resume viewer */
@@ -654,10 +656,60 @@ void moveToPositionIndex(int index) {
         <article class="proj">
           <div class="proj-head">
             <h3>RFID Clock-In System</h3>
-            <span class="status hollow">Working prototype</span>
+            <span class="status">Completed</span>
           </div>
-          <p class="meta">Co-leader · Fall 2025</p>
-          <p>A badge-tap time clock for shift work. A Raspberry Pi reads RFID badges through an RC522 module over SPI, and a 20x4 character LCD (LCD2004) shows who just clocked in, how long they worked, and what they earned for the shift. I programmed the Python side: badge authentication, UID parsing, GPIO control, timestamp logging, and pay calculation. The LCD runs in 4-bit parallel mode straight off the Pi's GPIO pins, a reset button on an interrupt clears every open session, and repeat reads from a badge left on the reader get filtered out. It all lives in a 3D printed enclosure with the screen on top and the reader below.</p>
+          <p class="meta">Co-leader · Montgomery College, ENEE 150 · Fall 2025 · Team of three</p>
+          <p>A badge-tap time clock for shift work. A Raspberry Pi reads RFID badges through an RC522 module over SPI, gives each new badge a label like User 1 or User 2, and shows on a 20x4 character LCD (LCD2004) how long that person worked and what they earned at a set hourly rate. I programmed the Python side: badge authentication, UID parsing, GPIO control, timestamp logging, and pay calculation. It all lives in a 3D printed enclosure a teammate designed in CREO, with the screen on top and the reader below.</p>
+          <ul class="points">
+            <li>Our first screen, a 16x2 LCD, only ever showed random characters. We rechecked the wiring, moved the contrast pin to a potentiometer, and added a 330 Ω resistor on the backlight, but nothing fixed it, even with our instructors helping. A 20x4 LCD with the same pinout worked right away, so the first module was faulty.</li>
+            <li>The Pi ran through a VS Code remote connection with no internet access, so pip couldn't install anything. We downloaded the RPLCD and mfrc522 packages from PyPI on a laptop and copied them straight onto the Pi.</li>
+            <li>The LCD runs in 4-bit mode to save GPIO pins, a reset button on an interrupt clears every open session, and repeat reads from a badge left on the reader get ignored.</li>
+            <li>The enclosure took two prints. The first one's LCD window was too tight, so it was redesigned with better tolerances and a hollower shell, and the RFID window was drilled and sanded to fit.</li>
+          </ul>
+<details class="code">
+<summary>Pin mapping <span class="count">LCD, RFID reader, reset button</span></summary>
+<div class="code-body">
+            <div class="pin-grid">
+              <div class="table-scroll">
+                <table class="data-table">
+                  <caption>20x4 LCD, 4-bit mode</caption>
+                  <thead><tr><th scope="col">LCD pin</th><th scope="col">Connects to</th></tr></thead>
+                  <tbody>
+                  <tr><td>RS</td><td>GPIO 26</td></tr>
+                  <tr><td>E</td><td>GPIO 5</td></tr>
+                  <tr><td>D4</td><td>GPIO 6</td></tr>
+                  <tr><td>D5</td><td>GPIO 13</td></tr>
+                  <tr><td>D6</td><td>GPIO 19</td></tr>
+                  <tr><td>D7</td><td>GPIO 12</td></tr>
+                  <tr><td>VSS</td><td>GND</td></tr>
+                  <tr><td>VDD</td><td>5V</td></tr>
+                  <tr><td>V0</td><td>Potentiometer (contrast)</td></tr>
+                  <tr><td>RW</td><td>GND (write only)</td></tr>
+                  <tr><td>A (backlight +)</td><td>5V through 330 Ω</td></tr>
+                  <tr><td>K (backlight -)</td><td>GND</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="table-scroll">
+                <table class="data-table">
+                  <caption>RC522 RFID reader, SPI</caption>
+                  <thead><tr><th scope="col">RC522 pin</th><th scope="col">Connects to</th></tr></thead>
+                  <tbody>
+                  <tr><td>VCC</td><td>3.3V</td></tr>
+                  <tr><td>GND</td><td>GND</td></tr>
+                  <tr><td>SDA / SS</td><td>CE0</td></tr>
+                  <tr><td>SCK</td><td>SCLK</td></tr>
+                  <tr><td>MOSI</td><td>MOSI</td></tr>
+                  <tr><td>MISO</td><td>MISO</td></tr>
+                  <tr><td>RST</td><td>GPIO 25</td></tr>
+                  <tr><td>IRQ</td><td>Not connected</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <p class="table-note">Reset button: one side to GPIO 18 using the internal pull-up, the other side to GND. Pin numbers are BCM.</p>
+</div>
+</details>
 <details class="code">
 <summary>View code excerpts <span class="count">3 excerpts, Python</span></summary>
 <div class="code-body">
@@ -752,13 +804,16 @@ GPIO.add_event_detect(
               <video src="media/rfid-demo.mp4" poster="media/rfid-demo-poster.jpg" muted loop playsinline autoplay preload="metadata" aria-label="Demo video of the RFID clock-in system"></video>
               <span class="badge">Demo</span>
             </button>
-            <button class="shot" type="button" style="--ar:0.562" data-src="media/rfid-enclosure.jpg" data-cap="The 3D printed enclosure: LCD2004 (20x4) display on top, RFID reader in the base."><img src="media/rfid-enclosure-t.jpg" alt="Red and green 3D printed enclosure with a blue LCD screen" loading="lazy" decoding="async"></button>
-            <button class="shot" type="button" style="--ar:1.333" data-src="media/rfid-breadboard.jpg" data-cap="Breadboard prototype, before the enclosure."><img src="media/rfid-breadboard-t.jpg" alt="Breadboard with wiring and a blue LCD showing a clock-out message" loading="lazy" decoding="async"></button>
-            <button class="shot" type="button" style="--ar:1.333" data-src="media/rfid-pi.jpg" data-cap="The Raspberry Pi and ribbon cable feeding the breadboard."><img src="media/rfid-pi-t.jpg" alt="Raspberry Pi in a clear case connected by ribbon cable" loading="lazy" decoding="async"></button>
+            <button class="shot" type="button" style="--ar:0.562" data-src="media/rfid-enclosure.jpg" data-cap="The finished build: LCD2004 (20x4) display on top, RFID reader in the base."><img src="media/rfid-enclosure-t.jpg" alt="Red and green 3D printed enclosure with a blue LCD screen" loading="lazy" decoding="async"></button>
+            <button class="shot" type="button" style="--ar:1.274" data-src="media/rfid-sketch.jpg" data-cap="The first sketch of the enclosure, with windows for the screen and the reader. A servo-driven door was a stretch goal."><img src="media/rfid-sketch-t.jpg" alt="Pencil sketch of a box with an LCD window and an RFID reader window" loading="lazy" decoding="async"></button>
+            <button class="shot" type="button" style="--ar:0.750" data-src="media/rfid-printing.jpg" data-cap="The enclosure printing on a Bambu Lab printer."><img src="media/rfid-printing-t.jpg" alt="3D printer printing a box-shaped enclosure with support structures" loading="lazy" decoding="async"></button>
+            <button class="shot" type="button" style="--ar:0.750" data-src="media/rfid-lcd-fit.jpg" data-cap="The reprinted top piece, holding the LCD snugly in its window."><img src="media/rfid-lcd-fit-t.jpg" alt="Red 3D printed panel with an LCD fitted into a rectangular window" loading="lazy" decoding="async"></button>
+            <button class="shot" type="button" style="--ar:0.835" data-src="media/rfid-16x2.jpg" data-cap="The first wiring, with the 16x2 LCD that turned out to be faulty."><img src="media/rfid-16x2-t.jpg" alt="Breadboard wired to a Raspberry Pi cobbler, a small LCD and an RFID reader" loading="lazy" decoding="async"></button>
+            <button class="shot" type="button" style="--ar:1.333" data-src="media/rfid-breadboard.jpg" data-cap="The 20x4 LCD working on the breadboard, before the enclosure."><img src="media/rfid-breadboard-t.jpg" alt="Breadboard with wiring and a blue LCD showing a clock-out message" loading="lazy" decoding="async"></button>
             <button class="shot" type="button" style="--ar:1.333" data-src="media/rfid-terminal.jpg" data-cap="Debugging tag reads in Python on the Pi."><img src="media/rfid-terminal-t.jpg" alt="Terminal output showing detected RFID tag numbers" loading="lazy" decoding="async"></button>
           </div>
           <ul class="tags" aria-label="Tools used">
-            <li>Raspberry Pi</li><li>Python</li><li>RC522 RFID</li><li>SPI</li><li>LCD2004 (20x4)</li><li>3D printing</li>
+            <li>Raspberry Pi</li><li>Python</li><li>RC522 RFID</li><li>SPI</li><li>LCD2004 (20x4)</li><li>GPIO interrupts</li><li>3D printing</li>
           </ul>
         </article>
 
